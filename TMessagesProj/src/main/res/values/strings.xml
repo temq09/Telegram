@@ -2182,6 +2182,8 @@
     <string name="ScreenCaptureInfo">If disabled, you won\'t be able to take screenshots in the app but chat content will be hidden in the task switcher.</string>
     <string name="ScreenCaptureAlert">This will hide the contents of your chats or chat list from the task switcher, but you will not be able to take screenshots on Telegram.\n\nYou may need to restart the app for this to take effect.</string>
     <string name="TooManyTries">Too many tries.\nPlease try again in %1$s.</string>
+    <string name="DoubleBottomName">Double bottom</string>
+    <string name="DoubleBottomInfo">It will allow to show different chat list depending on the password your entered</string>
     <!--media view-->
     <string name="January">January</string>
     <string name="February">February</string>

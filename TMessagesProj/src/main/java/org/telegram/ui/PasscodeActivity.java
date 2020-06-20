@@ -46,6 +46,8 @@ import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.support.fingerprint.FingerprintManagerCompat;
+import org.telegram.messenger.upsidedown.DoubleBottom;
+import org.telegram.messenger.upsidedown.DoubleBottomConfig;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
 import org.telegram.ui.ActionBar.ActionBarMenuItem;
@@ -85,6 +87,8 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
     private int badPasscodeTries;
     private long lastPasscodeTry;
 
+    private int doubleBottomRow;
+    private int doubleBottomDetailedRow;
     private int passcodeRow;
     private int changePasscodeRow;
     private int passcodeDetailRow;
@@ -95,6 +99,8 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
     private int autoLockDetailRow;
     private int rowCount;
 
+    private final DoubleBottom doubleBottom;
+
     private final static int done_button = 1;
     private final static int pin_item = 2;
     private final static int password_item = 3;
@@ -102,6 +108,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
     public PasscodeActivity(int type) {
         super();
         this.type = type;
+        doubleBottom = DoubleBottom.Factory.get();
     }
 
     @Override
@@ -381,6 +388,8 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                     if (!SharedConfig.allowScreenCapture) {
                         AlertsCreator.showSimpleAlert(PasscodeActivity.this, LocaleController.getString("ScreenCaptureAlert", R.string.ScreenCaptureAlert));
                     }
+                } else if (position == doubleBottomRow) {
+                    presentFragment(new DoubleBottomActivity());
                 }
             });
         }
@@ -437,6 +446,10 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
             autoLockDetailRow = rowCount++;
             captureRow = rowCount++;
             captureDetailRow = rowCount++;
+            if (doubleBottom.isMasterSession()) {
+                doubleBottomRow = rowCount++;
+                doubleBottomDetailedRow = rowCount++;
+            }
         } else {
             captureRow = -1;
             captureDetailRow = -1;
@@ -605,7 +618,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
         @Override
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             int position = holder.getAdapterPosition();
-            return position == passcodeRow || position == fingerprintRow || position == autoLockRow || position == captureRow || SharedConfig.passcodeHash.length() != 0 && position == changePasscodeRow;
+            return position == doubleBottomRow || position == passcodeRow || position == fingerprintRow || position == autoLockRow || position == captureRow || SharedConfig.passcodeHash.length() != 0 && position == changePasscodeRow;
         }
 
         @Override
@@ -672,6 +685,10 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                         textCell.setTextAndValue(LocaleController.getString("AutoLock", R.string.AutoLock), val, true);
                         textCell.setTag(Theme.key_windowBackgroundWhiteBlackText);
                         textCell.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+                    } else if (position == doubleBottomRow) {
+                        textCell.setText(LocaleController.getString(DoubleBottomConfig.Lexems.DOUBLE_BOTTOM_NAME, R.string.DoubleBottomName), false);
+                        textCell.setTag(Theme.key_windowBackgroundWhiteBlackText);
+                        textCell.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
                     }
                     break;
                 }
@@ -690,6 +707,9 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                     } else if (position == captureDetailRow) {
                         cell.setText(LocaleController.getString("ScreenCaptureInfo", R.string.ScreenCaptureInfo));
                         cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
+                    } else if (position == doubleBottomDetailedRow) {
+                        cell.setText(LocaleController.getString(DoubleBottomConfig.Lexems.DOUBLE_BOTTOM_INFO, R.string.DoubleBottomInfo));
+                        cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     }
                     break;
                 }
@@ -700,9 +720,9 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
         public int getItemViewType(int position) {
             if (position == passcodeRow || position == fingerprintRow || position == captureRow) {
                 return 0;
-            } else if (position == changePasscodeRow || position == autoLockRow) {
+            } else if (position == changePasscodeRow || position == autoLockRow || position == doubleBottomRow) {
                 return 1;
-            } else if (position == passcodeDetailRow || position == autoLockDetailRow || position == captureDetailRow) {
+            } else if (position == passcodeDetailRow || position == autoLockDetailRow || position == captureDetailRow || position == doubleBottomDetailedRow) {
                 return 2;
             }
             return 0;
