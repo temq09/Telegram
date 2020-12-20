@@ -118,7 +118,11 @@ public class DoubleBottomActivity extends BaseFragment {
         frameLayout.addView(listView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         listView.setAdapter(adapter = new PasswordListAdapter(context));
         listView.setOnItemClickListener((view, position) -> {
-
+            if (position == PasswordListAdapter.POSITION_ADD_NEW) {
+                presentFragment(new SecondPasswordActivity(SecondPasswordActivity.TYPE_CREATE_NEW));
+            } else {
+                presentFragment(new SecondPasswordActivity(SecondPasswordActivity.TYPE_EDIT));
+            }
         });
     }
 

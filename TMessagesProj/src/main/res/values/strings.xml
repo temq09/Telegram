@@ -2183,9 +2183,11 @@
     <string name="ScreenCaptureAlert">This will hide the contents of your chats or chat list from the task switcher, but you will not be able to take screenshots on Telegram.\n\nYou may need to restart the app for this to take effect.</string>
     <string name="TooManyTries">Too many tries.\nPlease try again in %1$s.</string>
     <string name="DoubleBottomName">Double bottom</string>
-    <string name="DoubleBottomInfo">It will allow to show different chat list depending on the password your entered</string>
-    <string name="DoubleBottomAddNewInfo">Create a new password and select chats you want to see</string>
+    <string name="DoubleBottomInfo">It will allow to show different chat list depending on the passcode your entered</string>
+    <string name="DoubleBottomAddNewInfo">Create a new passcode and select chats you want to see</string>
     <string name="DoubleBottomAddNew">Create new</string>
+    <string name="DoubleBottomNewPassword">Enter new passcode(4 digits)</string>
+    <string name="DoubleBottomRetryPassword">Re-enter your new passcode</string>
     <!--media view-->
     <string name="January">January</string>
     <string name="February">February</string>
