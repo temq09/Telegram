@@ -29,6 +29,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import androidx.core.content.pm.ShortcutManagerCompat;
+
 public class SharedConfig {
 
     public static String pushString = "";
@@ -36,7 +38,7 @@ public class SharedConfig {
     public static byte[] pushAuthKey;
     public static byte[] pushAuthKeyId;
 
-    public static long directShareHash;
+    public static String directShareHash;
 
     public static boolean saveIncomingPhotos;
     public static String passcodeHash = "";
@@ -62,7 +64,10 @@ public class SharedConfig {
     public static int lockRecordAudioVideoHint;
     public static boolean searchMessagesAsListUsed;
     public static boolean stickersReorderingHintUsed;
+    public static boolean disableVoiceAudioEffects;
     private static int lastLocalId = -210000;
+
+    public static String storageCacheDir;
 
     private static String passportConfigJson = "";
     private static HashMap<String, String> passportConfigMap;
@@ -74,6 +79,7 @@ public class SharedConfig {
 
     public static boolean saveToGallery;
     public static int mapPreviewType = 2;
+    public static boolean chatBubbles = Build.VERSION.SDK_INT >= 30;
     public static boolean autoplayGifs = true;
     public static boolean autoplayVideo = true;
     public static boolean raiseToSpeak = true;
@@ -86,7 +92,7 @@ public class SharedConfig {
     public static boolean streamAllVideo = false;
     public static boolean streamMkv = false;
     public static boolean saveStreamMedia = true;
-    public static boolean smoothKeyboard = false;
+    public static boolean smoothKeyboard = true;
     public static boolean pauseMusicOnRecord = true;
     public static boolean sortContactsByName;
     public static boolean sortFilesByName;
@@ -179,6 +185,8 @@ public class SharedConfig {
                 editor.putInt("textSelectionHintShows", textSelectionHintShows);
                 editor.putInt("scheduledOrNoSoundHintShows", scheduledOrNoSoundHintShows);
                 editor.putInt("lockRecordAudioVideoHint", lockRecordAudioVideoHint);
+                editor.putBoolean("disableVoiceAudioEffects", disableVoiceAudioEffects);
+                editor.putString("storageCacheDir", !TextUtils.isEmpty(storageCacheDir) ? storageCacheDir : "");
                 editor.commit();
             } catch (Exception e) {
                 FileLog.e(e);
@@ -196,7 +204,7 @@ public class SharedConfig {
 
     public static void loadConfig() {
         synchronized (sync) {
-            if (configLoaded) {
+            if (configLoaded || ApplicationLoader.applicationContext == null) {
                 return;
             }
 
@@ -217,6 +225,7 @@ public class SharedConfig {
             pushString = preferences.getString("pushString2", "");
             passportConfigJson = preferences.getString("passportConfigJson", "");
             passportConfigHash = preferences.getInt("passportConfigHash", 0);
+            storageCacheDir = preferences.getString("storageCacheDir", null);
             String authKeyString = preferences.getString("pushAuthKey", null);
             if (!TextUtils.isEmpty(authKeyString)) {
                 pushAuthKey = Base64.decode(authKeyString, Base64.DEFAULT);
@@ -242,7 +251,7 @@ public class SharedConfig {
             customTabs = preferences.getBoolean("custom_tabs", true);
             directShare = preferences.getBoolean("direct_share", true);
             shuffleMusic = preferences.getBoolean("shuffleMusic", false);
-            playOrderReversed = preferences.getBoolean("playOrderReversed", false);
+            playOrderReversed = !shuffleMusic && preferences.getBoolean("playOrderReversed", false);
             inappCamera = preferences.getBoolean("inappCamera", true);
             hasCameraCache = preferences.contains("cameraCache");
             roundCamera16to9 = true;//preferences.getBoolean("roundCamera16to9", false);
@@ -254,7 +263,7 @@ public class SharedConfig {
             useSystemEmoji = preferences.getBoolean("useSystemEmoji", false);
             streamMedia = preferences.getBoolean("streamMedia", true);
             saveStreamMedia = preferences.getBoolean("saveStreamMedia", true);
-            smoothKeyboard = preferences.getBoolean("smoothKeyboard", false);
+            smoothKeyboard = preferences.getBoolean("smoothKeyboard2", true);
             pauseMusicOnRecord = preferences.getBoolean("pauseMusicOnRecord", true);
             streamAllVideo = preferences.getBoolean("streamAllVideo", BuildVars.DEBUG_VERSION);
             streamMkv = preferences.getBoolean("streamMkv", false);
@@ -262,7 +271,7 @@ public class SharedConfig {
             sortContactsByName = preferences.getBoolean("sortContactsByName", false);
             sortFilesByName = preferences.getBoolean("sortFilesByName", false);
             noSoundHintShowed = preferences.getBoolean("noSoundHintShowed", false);
-            directShareHash = preferences.getLong("directShareHash", 0);
+            directShareHash = preferences.getString("directShareHash2", null);
             useThreeLinesLayout = preferences.getBoolean("useThreeLinesLayout", false);
             archiveHidden = preferences.getBoolean("archiveHidden", false);
             distanceSystemType = preferences.getInt("distanceSystemType", 0);
@@ -276,6 +285,7 @@ public class SharedConfig {
             textSelectionHintShows = preferences.getInt("textSelectionHintShows", 0);
             scheduledOrNoSoundHintShows = preferences.getInt("scheduledOrNoSoundHintShows", 0);
             lockRecordAudioVideoHint = preferences.getInt("lockRecordAudioVideoHint", 0);
+            disableVoiceAudioEffects = preferences.getBoolean("disableVoiceAudioEffects", false);
             preferences = ApplicationLoader.applicationContext.getSharedPreferences("Notifications", Activity.MODE_PRIVATE);
             showNotificationsForAllAccounts = preferences.getBoolean("AllAccounts", true);
 
@@ -523,6 +533,14 @@ public class SharedConfig {
         });
     }
 
+    public static void toggleDisableVoiceAudioEffects() {
+        disableVoiceAudioEffects = !disableVoiceAudioEffects;
+        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean("disableVoiceAudioEffects", disableVoiceAudioEffects);
+        editor.commit();
+    }
+
     public static void toggleLoopStickers() {
         loopStickers = !loopStickers;
         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
@@ -539,11 +557,16 @@ public class SharedConfig {
         editor.commit();
     }
 
-    public static void toggleShuffleMusic(int type) {
+    public static void setPlaybackOrderType(int type) {
         if (type == 2) {
-            shuffleMusic = !shuffleMusic;
+            shuffleMusic = true;
+            playOrderReversed = false;
+        } else if (type == 1) {
+            playOrderReversed = true;
+            shuffleMusic = false;
         } else {
-            playOrderReversed = !playOrderReversed;
+            playOrderReversed = false;
+            shuffleMusic = false;
         }
         MediaController.getInstance().checkIsNextMediaFileDownloaded();
         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
@@ -553,9 +576,9 @@ public class SharedConfig {
         editor.commit();
     }
 
-    public static void toggleRepeatMode() {
-        repeatMode++;
-        if (repeatMode > 2) {
+    public static void setRepeatMode(int mode) {
+        repeatMode = mode;
+        if (repeatMode < 0 || repeatMode > 2) {
             repeatMode = 0;
         }
         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
@@ -652,6 +675,8 @@ public class SharedConfig {
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean("direct_share", directShare);
         editor.commit();
+        ShortcutManagerCompat.removeAllDynamicShortcuts(ApplicationLoader.applicationContext);
+        MediaDataController.getInstance(UserConfig.selectedAccount).buildShortcuts();
     }
 
     public static void toggleStreamMedia() {
@@ -706,7 +731,7 @@ public class SharedConfig {
         smoothKeyboard = !smoothKeyboard;
         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
         SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("smoothKeyboard", smoothKeyboard);
+        editor.putBoolean("smoothKeyboard2", smoothKeyboard);
         editor.commit();
     }
 
@@ -869,7 +894,7 @@ public class SharedConfig {
     public final static int PERFORMANCE_CLASS_AVERAGE = 1;
     public final static int PERFORMANCE_CLASS_HIGH = 2;
 
-    public static int getDevicePerfomanceClass() {
+    public static int getDevicePerformanceClass() {
         if (devicePerformanceClass == -1) {
             int maxCpuFreq = -1;
             try {
